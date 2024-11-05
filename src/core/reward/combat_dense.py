@@ -8,9 +8,10 @@ class CombatDenseRewardWrapper(MineDojoEnvdBase):
         step_penalty: float | int,
         attack_reward: float | int,
     ):
+        assert step_penalty >= 0, f"penalty must be non-negative"
         super().__init__(env)
         self.process_flow.append(f"{self.__class__.__name__}")
-        assert step_penalty >= 0, f"penalty must be non-negative"
+
         self._step_penalty = step_penalty
         self._attack_reward = attack_reward
         self.env.action_space.no_op()

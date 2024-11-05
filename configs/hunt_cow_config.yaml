@@ -1,19 +1,20 @@
 Environment:
-  task: "CombatSpider"
+  task: "HuntCow"
   task_parameter:
     image_size: [224,224]
     step_penalty: 0
+    nav_reward_scale: 0.1
     attack_reward: 1
     success_reward: 10
     # max_spawn_range: 10
     # target_quantities: 1
     # max_episode_len: 500
-
+    
   action_space: "ReducedActionSpace"
   observation: "ImageObservation"
 
 Mode: "PPO_Training" # "PPO_Training" / "Random"
 PPO_Training:
-  save_name: "PPO_testing"
+  save_name: "PPO_HuntCow"
   training_step: 10000 #10K
   eval_episode: 10

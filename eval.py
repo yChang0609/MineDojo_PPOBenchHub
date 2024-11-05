@@ -1,12 +1,14 @@
+# PPO
 from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import VecFrameStack
 from stable_baselines3.common.env_util import make_vec_env
 
+# Env
+from src.utils import build_env
+
 import argparse
 import pprint
 import yaml
-
-from src.utils import build_env
 
 parser = argparse.ArgumentParser()
 parser.add_argument(

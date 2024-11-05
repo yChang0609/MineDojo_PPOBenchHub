@@ -1,1 +1,0 @@
-MINEDOJO_HEADLESS=1 python train.py --config configs/config.yaml
