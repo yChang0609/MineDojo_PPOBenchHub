@@ -1,10 +1,12 @@
+# PPO
 from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import VecFrameStack
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.callbacks import EvalCallback
-import src.tasks as tasks 
-import src.core.actions as actions
-import src.core.observation as observation
+
+# Env
+from src.utils import build_env
+
 from tqdm import tqdm
 
 import argparse
@@ -18,21 +20,23 @@ parser.add_argument(
     default='configs/config.yaml')
 args = parser.parse_args()
 
-def ppo_training(params, env):
-    env = make_vec_env(lambda: env, n_envs=4)
-    env = VecFrameStack(env, n_stack=4)
+def ppo_training(params):
+    vec_env = make_vec_env(lambda: build_env(params), n_envs=1)
+    vec_env = VecFrameStack(vec_env, n_stack=4)
 
     task = params["Environment"]["task"]
-    name = params["PPO_Training"]["save_name"]
+    model_name = params["PPO_Training"]["save_name"]
     total_timesteps = params["PPO_Training"]["training_step"]
 
-    log_dir = f".logs/ppo_{task}/{name}"
-    model = PPO("MlpPolicy", env, ent_coef=0.01, verbose=1, tensorboard_log=log_dir)
+    log_dir = f"logs/ppo_{task}/{model_name}"
+    model = PPO("MlpPolicy", vec_env, ent_coef=0.01, verbose=1, tensorboard_log=log_dir)
     model.learn(total_timesteps=total_timesteps)
-    model.save("./model/"+ name)
-    env.close()
+    model.save("./model/"+ model_name)
+    vec_env.close()
+    
 
-def random_action(params, env):
+def random_action(params):
+    env = build_env(params)
     for i in tqdm(range(2), desc="Episode"):
         obs = env.reset()
         done = False
@@ -53,21 +57,8 @@ if __name__ == "__main__":
         pp = pprint.PrettyPrinter(indent=4)
         pp.pprint(params)
 
-    env = tasks.available_task[params["Environment"]["task"]]( # "CombatSpider"
-        **params["Environment"]["task_parameter"]
-        # image_size=(224,224)
-        # step_penalty=0,
-        # attack_reward=1,
-        # success_reward=10,
-    )
-    env = actions.available_action_space[params["Environment"]["action_space"]]( #"ReducedActionSpace"
-        env=env
-    )
-    env = observation.available_observation[params["Environment"]["observation"]]( #"ImageObservation"
-        env=env
-    )
     mode = params["Mode"]
     if "PPO_Training" == mode:
-        ppo_training(params, env)
+        ppo_training(params)
     elif "Random" == mode:
-        random_action(params, env)
+        random_action(params)

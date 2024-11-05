@@ -12,7 +12,8 @@ Environment:
   action_space: "ReducedActionSpace"
   observation: "ImageObservation"
 
-Mode: "Random" # "PPO Trianing" / "Random"
+Mode: "PPO_Training" # "PPO_Training" / "Random"
 PPO_Training:
   save_name: "PPO_testing"
   training_step: 10000 #10K
+  eval_episode: 10
