@@ -13,8 +13,8 @@ Environment:
   action_space: "ReducedActionSpace"
   observation: "ImageObservation"
 
-Mode: "PPO_Training" # "PPO_Training" / "Random"
 PPO_Training:
   save_name: "PPO_HuntCow"
+  policy: "MlpPolicy" # CnnPolicy
   training_step: 10000 #10K
   eval_episode: 10

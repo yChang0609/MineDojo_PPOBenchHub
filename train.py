@@ -25,9 +25,10 @@ def ppo_training(params):
     task = params["Environment"]["task"]
     model_name = params["PPO_Training"]["save_name"]
     total_timesteps = params["PPO_Training"]["training_step"]
+    policy = params["PPO_Training"]["policy"]
 
     log_dir = f"logs/ppo_{task}/{model_name}"
-    model = PPO("MlpPolicy", vec_env, ent_coef=0.01, verbose=1, tensorboard_log=log_dir)
+    model = PPO(policy, vec_env, ent_coef=0.01, verbose=1, tensorboard_log=log_dir)
     model.learn(total_timesteps=total_timesteps)
     model.save("./model/"+ model_name)
     vec_env.close()

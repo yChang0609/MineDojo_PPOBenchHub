@@ -14,5 +14,6 @@ Environment:
 
 PPO_Training:
   save_name: "PPO_CombatSpider"
+  policy: "MlpPolicy" # CnnPolicy
   training_step: 10000 #10K
   eval_episode: 10
