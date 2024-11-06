@@ -1,11 +1,12 @@
-from gym.spaces import MultiDiscrete
+from minedojo.sim.spaces import MultiDiscrete
+# from gym.spaces import MultiDiscrete
 from src.core.minedojo_base import MineDojoActionBase
 
 class ReducedActionSpace(MineDojoActionBase):
     def __init__(self, env):
         super().__init__(env)
         self.process_flow.append(f"{self.__class__.__name__}")
-        self.action_space = MultiDiscrete([12, 3])
+        self.action_space = MultiDiscrete([12, 3], noop_vec=[0, 0])
         self.action_map = {
             1: [1, 0, 0],  # forward
             2: [2, 0, 0],  # backward
@@ -32,6 +33,3 @@ class ReducedActionSpace(MineDojoActionBase):
         elif action[1] == 2:
             action_t[5] = 3  # attack
         return action_t
-    
-    def no_op():
-        return [0, 0]
