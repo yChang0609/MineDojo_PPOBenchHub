@@ -14,9 +14,11 @@ def build_env(params, seed=None):
     env = observation.available_observation[params["Environment"]["observation"]]( #"ImageObservation"
         env=env
     )
-
-    if seed == None:
+    # seed setting priority [function input seed] -> [params seed] -> [np random seed]
+    if seed == None and params["Environment"]["seed"] == None:
         seed = np.random.randint(0, 10000)
+    else:
+        seed = params["Environment"]["seed"]
     env.seed(seed)
     print(f"Env seed : {seed}")
     return env
