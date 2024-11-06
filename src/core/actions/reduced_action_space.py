@@ -33,4 +33,5 @@ class ReducedActionSpace(MineDojoActionBase):
             action_t[5] = 3  # attack
         return action_t
     
-    
+    def no_op():
+        return [0, 0]
