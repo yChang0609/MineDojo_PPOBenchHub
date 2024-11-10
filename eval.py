@@ -26,6 +26,9 @@ def vec_env_obs2obs_list(vec_env_obs):
     return [(cv2.cvtColor(_obs.transpose(1, 2, 0), cv2.COLOR_RGB2BGR)) for _obs in split_obs]
 
 if __name__ == "__main__":
+    import warnings
+    warnings.filterwarnings('ignore')
+
     params = None
     with open(args.config, 'r') as y_file:
         params = yaml.load(y_file, Loader=yaml.FullLoader)
@@ -49,45 +52,48 @@ if __name__ == "__main__":
     frame_size = (224, 224) 
 
     obs = vec_env.reset()
-    save_frames += vec_env_obs2obs_list(obs)
-    
+    total_steps = 0
     total_reward = 0
     episode_reward=[]
     while True:
         action, _ = model.predict(obs.copy())
         obs, reward, done, info = vec_env.step(action)
-        save_frames += vec_env_obs2obs_list(obs)
+        if (len(episode_reward) + 1) % 10 == 0:
+            save_frames += vec_env_obs2obs_list(obs)
         total_reward += reward
-        
+        total_steps += 1
+
         if done:
             # episode_reward append and reset 
             episode_reward.append(total_reward)
-            print(f"Episode-{len(episode_reward)} reward: {total_reward}")
+            print(f"Episode-{len(episode_reward)} / step: {total_steps} & reward: {total_reward}")
             
             # insert done_frame
-            done_frame = np.ones((224, 224, 3), dtype=np.uint8) * 255
-            text = f"Ep{len(episode_reward)}:{total_reward}"
-            font = cv2.FONT_HERSHEY_SIMPLEX
-            font_scale = 1
-            thickness = 2
-            (text_width, text_height), baseline = cv2.getTextSize(text, font, font_scale, thickness)
-            text_x = (done_frame.shape[1] - text_width) // 2  
-            text_y = (done_frame.shape[0] + text_height) // 2  
-            position = (text_x, text_y)  
-            cv2.putText(
-                done_frame, 
-                text, position, cv2.FONT_HERSHEY_SIMPLEX,
-                1, (0, 0, 0), 2,
-                cv2.LINE_AA      
-            )
-            save_frames += [done_frame]*16
-
-            total_reward = 0
-            obs = vec_env.reset()
+            if (len(episode_reward)) % 10 == 0:
+                done_frame = np.ones((224, 224, 3), dtype=np.uint8) * 255
+                text = f"Ep{len(episode_reward)}:{total_reward}"
+                font = cv2.FONT_HERSHEY_SIMPLEX
+                font_scale = 1
+                thickness = 2
+                (text_width, text_height), baseline = cv2.getTextSize(text, font, font_scale, thickness)
+                text_x = (done_frame.shape[1] - text_width) // 2  
+                text_y = (done_frame.shape[0] + text_height) // 2  
+                position = (text_x, text_y)  
+                cv2.putText(
+                    done_frame, 
+                    text, position, cv2.FONT_HERSHEY_SIMPLEX,
+                    1, (0, 0, 0), 2,
+                    cv2.LINE_AA      
+                )
+                save_frames += [done_frame]*16
             if len(episode_reward) == eval_episode:        
                 out = cv2.VideoWriter(f"{log_dir}/episodes{eval_episode}_{sum(episode_reward)/len(episode_reward)}.mp4", fourcc, fps, frame_size)
                 for frame in save_frames:
                     out.write(frame)
                 out.release()
                 break
+            # reset env
+            total_steps = 0
+            total_reward = 0
+            obs = vec_env.reset()
     print(f"Avg reward for ep{eval_episode}: {sum(episode_reward)/len(episode_reward)}")

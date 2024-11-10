@@ -24,6 +24,7 @@ class EpisodeLoggerCallback(BaseCallback):
         self.num_envs = num_envs
         self.episode_steps = [0] * num_envs   
         self.episode_rewards = [0] * num_envs
+        self.episode_count = [0] * num_envs
     
     def _on_step(self) -> bool:
         rewards = self.locals['rewards']
@@ -34,9 +35,10 @@ class EpisodeLoggerCallback(BaseCallback):
             self.episode_steps[env_idx] += 1
 
             if dones[env_idx]:
+                self.episode_count[env_idx] += 1
                 self.logger.record(f"Episode/Env_{env_idx}/Episode_Steps", self.episode_steps[env_idx])
                 self.logger.record(f"Episode/Env_{env_idx}/Episode_Reward", self.episode_rewards[env_idx])
-                self.logger.dump(self.num_timesteps)
+                self.logger.dump(self.episode_count[env_idx])
 
                 self.episode_steps[env_idx] = 0
                 self.episode_rewards[env_idx] = 0
@@ -67,6 +69,9 @@ def ppo_training(params):
     vec_env.close()
     
 if __name__ == "__main__":
+    import warnings
+    warnings.filterwarnings('ignore')
+    
     with open(args.config, 'r') as y_file:
         params = yaml.load(y_file, Loader=yaml.FullLoader)
         print('loaded params...')
