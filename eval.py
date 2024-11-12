@@ -41,11 +41,12 @@ if __name__ == "__main__":
 
     task = params["Environment"]["task"]
     model_name = params["PPO_Training"]["save_name"]
-    eval_episode = params["PPO_Training"]["eval_episode"]
+    eval_episode = 20# params["PPO_Training"]["eval_episode"]
     
     model = PPO.load("model/"+model_name)
     log_dir = f"logs/ppo_{task}/{model_name}"
 
+    success_count = 0
     save_frames = []
     fourcc = cv2.VideoWriter_fourcc(*'mp4v') 
     fps = 30
@@ -86,6 +87,8 @@ if __name__ == "__main__":
                     cv2.LINE_AA      
                 )
                 save_frames += [done_frame]*16
+            if total_reward > 10:
+                    success_count += 1
             if len(episode_reward) == eval_episode:        
                 out = cv2.VideoWriter(f"{log_dir}/episodes{eval_episode}_{sum(episode_reward)/len(episode_reward)}.mp4", fourcc, fps, frame_size)
                 for frame in save_frames:
@@ -96,4 +99,5 @@ if __name__ == "__main__":
             total_steps = 0
             total_reward = 0
             obs = vec_env.reset()
+    print(f"success_rate: {(success_count / eval_episode * 100):.2f}%")
     print(f"Avg reward for ep{eval_episode}: {sum(episode_reward)/len(episode_reward)}")

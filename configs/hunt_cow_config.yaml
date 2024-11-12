@@ -9,12 +9,14 @@ Environment:
     # max_spawn_range: 10
     # target_quantities: 1
     # max_episode_len: 500
-    
+  num_envs: 1
+  seed: 123
+
   action_space: "ReducedActionSpace"
   observation: "ImageObservation"
 
 PPO_Training:
-  save_name: "PPO_HuntCow"
+  save_name: "1M_MLP_HuntCow"
   policy: "MlpPolicy" # CnnPolicy
-  training_step: 10000 #10K
+  training_step: 100000 #1M
   eval_episode: 10

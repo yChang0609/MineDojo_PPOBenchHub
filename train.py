@@ -3,6 +3,7 @@ from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import VecFrameStack
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.callbacks import BaseCallback
+import torch
 
 # Env
 from src.utils import build_env
@@ -39,6 +40,11 @@ class EpisodeLoggerCallback(BaseCallback):
                 self.logger.record(f"Episode/Env_{env_idx}/Episode_Steps", self.episode_steps[env_idx])
                 self.logger.record(f"Episode/Env_{env_idx}/Episode_Reward", self.episode_rewards[env_idx])
                 self.logger.dump(self.episode_count[env_idx])
+                # actions = self.locals.get('actions', None)[env_idx]
+                # print(f"End action:{actions} / is_drop:{actions[5] == 2} , is_destroy:{actions[5] == 7}")
+                # if not actions[5] == 2 and not actions[5] == 7:
+                #      print(f"End action:{actions}")
+
 
                 self.episode_steps[env_idx] = 0
                 self.episode_rewards[env_idx] = 0
@@ -53,6 +59,8 @@ def ppo_training(params):
     policy = params["PPO_Training"]["policy"]
     num_envs = params["Environment"]["num_envs"]
     seed = params["Environment"]["seed"]
+    pi = params["PPO_Training"]["policy_network"]["pi"]
+    vf = params["PPO_Training"]["policy_network"]["vf"]
 
 
     vec_env = make_vec_env(
@@ -63,8 +71,14 @@ def ppo_training(params):
 
     log_dir = f"logs/ppo_{task}/{model_name}"
     episode_logger_callback = EpisodeLoggerCallback(num_envs=num_envs, verbose=1)
-    model = PPO(policy, vec_env, ent_coef=0.01, verbose=1, tensorboard_log=log_dir)
+
+    policy_kwargs = dict(activation_fn=torch.nn.ReLU, net_arch=dict(pi=pi, vf=vf))
+    model = PPO(policy, vec_env, ent_coef=0.01, verbose=1, policy_kwargs=policy_kwargs,tensorboard_log=log_dir)
+    print(model.policy)
+    print(model.batch_size)
+
     model.learn(total_timesteps=total_timesteps, callback=episode_logger_callback)
+    
     model.save("./model/"+ model_name)
     vec_env.close()
     

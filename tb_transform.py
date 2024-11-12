@@ -16,9 +16,9 @@ for tag in scalar_tags:
     scalar_events = ea.Scalars(tag)  
     print(f"Transform data for tag: {tag}")
     transform_tag = tag
-    if tag == "Episode/Steps":
+    if  "Episode/Steps" in tag:
         transform_tag = "sample/MineDojo/Combat_Spider_episode_steps"
-    elif tag == "Episode/Reward":
+    elif "Episode/Reward" in tag:
         transform_tag = "sample/MineDojo/Combat_Spider_reward"
     for event in scalar_events:
         writer.add_scalar(transform_tag, event.value, event.step)
