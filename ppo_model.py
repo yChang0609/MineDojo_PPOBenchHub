@@ -15,10 +15,10 @@ from omegaconf import OmegaConf
 from mineclip import MineCLIP
 
 
-MINECLIP_DATA_PATH = "/home/cgv/Documents/project/EmbodiedAgent/i-jepa"
+g_clip_model_path = None
 
 def load_clip(mount_path):
-    cfg = OmegaConf.load(f"{mount_path}/logs/mineclip/conf.yaml")
+    cfg = OmegaConf.load(f"{mount_path}/conf.yaml")
     OmegaConf.set_struct(cfg, False)
     ckpt = cfg.pop("ckpt")
     OmegaConf.set_struct(cfg, True)
@@ -41,7 +41,7 @@ class CLIPFeatureExtractor(BaseFeaturesExtractor):
         # We assume CxHxW images (channels first)
         # Re-ordering will be done by pre-preprocessing or wrapper
         # n_input_channels = observation_space.shape[0]
-        self.clip = load_clip(MINECLIP_DATA_PATH).to("cuda:0")
+        self.clip = load_clip(g_clip_model_path).to("cuda:0")
         for param in self.clip.parameters():
             param.requires_grad = False
         self.linear = nn.Sequential(nn.Linear(self.clip.clip_model.vision_model.output_dim, features_dim), nn.ReLU())
@@ -196,12 +196,16 @@ def build_ppo(vec_env, num_envs,
               log_dir, features_extractor_type, **kw
               )-> tuple[PPO, BaseCallback] :
     episode_logger_callback = EpisodeLoggerCallback(num_envs=num_envs, verbose=1)
-
+    
     if features_extractor_type == "CLIP":
+        clip_path = kw.get('mine_clip_path', None)
+        g_clip_model_path = clip_path
+        assert not g_clip_model_path == None
         policy_kwargs = dict(
             features_extractor_class=CLIPFeatureExtractor,
             features_extractor_kwargs=dict(features_dim=1024),
             )
+        
     elif features_extractor_type == "CNN":
         policy_kwargs = dict(
             features_extractor_class=CNNFeatureExtractor,

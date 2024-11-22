@@ -17,7 +17,7 @@ Environment:
 PPO_Training:
   save_name: "1M_CNN_HuntCow"
   policy_network:
-    features_extractor_type: "CNN" # CnnPolicy
+    features_extractor_type: "CNN" 
     gamma: 0.985
     gea_lambda: 0.95
     entropy_coef: 3E-4

@@ -15,13 +15,11 @@ Environment:
   observation: "ImageObservation"
 
 PPO_Training:
-  save_name: "1M_MLP_HuntCow"
-  policy: "MlpPolicy" # CnnPolicy
+  save_name: "100K_MLP_HuntCow"
   policy_network:
-    pi: [512, 512]
-    vf: [512, 512]
+    features_extractor_type: "None" # CnnPolicy
     gamma: 0.985
-    lambda: 0.95
+    gea_lambda: 0.95
     entropy_coef: 3E-4
-  training_step: 100000 #1M
-  eval_episode: 10
+  training_step: 100000 #100K
+  eval_episode: 10 
