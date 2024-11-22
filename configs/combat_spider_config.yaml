@@ -17,5 +17,11 @@ Environment:
 PPO_Training:
   save_name: "1M_MLP_HuntCow"
   policy: "MlpPolicy" # CnnPolicy
+  policy_network:
+    pi: [512, 512]
+    vf: [512, 512]
+    gamma: 0.985
+    lambda: 0.95
+    entropy_coef: 3E-4
   training_step: 100000 #1M
   eval_episode: 10

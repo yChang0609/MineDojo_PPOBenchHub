@@ -46,5 +46,8 @@
 # MINEDOJO_HEADLESS=1 python train.py --config $CONFIG_FILE
 # MINEDOJO_HEADLESS=1 python eval.py --config $CONFIG_FILE
 
-CONFIG_FILE=experiments/combat_spider/100K_MLP_CombatSpider.yaml
-MINEDOJO_HEADLESS=1 python train.py --config $CONFIG_FILE
+
+
+MINEDOJO_HEADLESS=1 python train.py --config experiments/hunt_cow/100K_CNN_HuntCow.yaml
+MINEDOJO_HEADLESS=1 python train.py --config experiments/hunt_cow/100K_CLIP_HuntCow.yaml
+MINEDOJO_HEADLESS=1 python train.py --config experiments/hunt_cow/100K_MLP_HuntCow.yaml

@@ -1,8 +1,9 @@
 Environment:
-  task: "CombatSpider"
+  task: "HuntCow"
   task_parameter:
     image_size: [224,224]
     step_penalty: 0
+    nav_reward_scale: 0.1
     attack_reward: 1
     success_reward: 10
     # max_spawn_range: 10
@@ -10,16 +11,16 @@ Environment:
     # max_episode_len: 500
   num_envs: 1
   seed: 123
-  
+ 
   action_space: "ReducedActionSpace"
   observation: "ImageObservation"
 
 PPO_Training:
-  save_name: "1M_MLP_HuntCow"
+  save_name: "100K_CNN_HuntCow"
   policy_network:
-    features_extractor_type: "None" # CnnPolicy
+    features_extractor_type: "CNN" # CnnPolicy
     gamma: 0.985
     gea_lambda: 0.95
     entropy_coef: 3E-4
-  training_step: 1000000 #1M
+  training_step: 100000 #100K
   eval_episode: 10 
