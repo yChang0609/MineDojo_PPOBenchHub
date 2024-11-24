@@ -19,7 +19,7 @@ PPO_Training:
   save_name: "100K_CLIP_HuntCow"
   policy_network:
     features_extractor_type: "CLIP" 
-    mine_clip_path: "/home/cgv/Documents/project/EmbodiedAgent/i-jepa"
+    mine_clip_path: "/home/cgv/Documents/project/EmbodiedAgent/i-jepa/logs/mineclip"
     gamma: 0.985
     gea_lambda: 0.95
     entropy_coef: 3E-4
