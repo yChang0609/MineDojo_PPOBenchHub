@@ -4,6 +4,7 @@ from stable_baselines3.common.vec_env import VecFrameStack
 from stable_baselines3.common.env_util import make_vec_env
 
 # Env
+import time
 from src.utils import build_env
 
 import argparse
@@ -36,41 +37,43 @@ if __name__ == "__main__":
         pp = pprint.PrettyPrinter(indent=4)
         pp.pprint(params)
 
-    vec_env = make_vec_env(lambda: build_env(params), n_envs=1)
-    vec_env = VecFrameStack(vec_env, n_stack=4)
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v') 
+    fps = 30
+    frame_size = params["Environment"]["task_parameter"]["image_size"]
 
     task = params["Environment"]["task"]
     model_name = params["PPO_Training"]["save_name"]
-    eval_episode = 20# params["PPO_Training"]["eval_episode"]
+    eval_episode = 20 # params["PPO_Training"]["eval_episode"]
     
     model = PPO.load("model/"+model_name)
     log_dir = f"logs/ppo_{task}/{model_name}"
+    eval_seed_list = [456, 789, 357, 468, 790]
+    for seed in eval_seed_list:
+        vec_env = make_vec_env(lambda: build_env(params,seed), n_envs=1)
+        vec_env = VecFrameStack(vec_env, n_stack=4)
 
-    success_count = 0
-    save_frames = []
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v') 
-    fps = 30
-    frame_size = (224, 224) 
+        obs = vec_env.reset()
+        success_count = 0
+        save_frames = []
 
-    obs = vec_env.reset()
-    total_steps = 0
-    total_reward = 0
-    episode_reward=[]
-    while True:
-        action, _ = model.predict(obs.copy())
-        obs, reward, done, info = vec_env.step(action)
-        if (len(episode_reward) + 1) % 10 == 0:
+        total_steps = 0
+        total_reward = 0
+        episode_reward=[]
+        while True:
+            action, _ = model.predict(obs.copy())
+            obs, reward, done, info = vec_env.step(action)
+            # if (len(episode_reward) + 1) % 10 == 0:
             save_frames += vec_env_obs2obs_list(obs)
-        total_reward += reward
-        total_steps += 1
+            total_reward += reward
+            total_steps += 1
 
-        if done:
-            # episode_reward append and reset 
-            episode_reward.append(total_reward)
-            print(f"Episode-{len(episode_reward)} / step: {total_steps} & reward: {total_reward}")
-            
-            # insert done_frame
-            if (len(episode_reward)) % 10 == 0:
+            if done:
+                # episode_reward append and reset 
+                episode_reward.append(total_reward)
+                print(f"Episode-{len(episode_reward)} / step: {total_steps} & reward: {total_reward}")
+                
+                # insert done_frame
+                # if (len(episode_reward)) % 10 == 0:
                 done_frame = np.ones((224, 224, 3), dtype=np.uint8) * 255
                 text = f"Ep{len(episode_reward)}:{total_reward}"
                 font = cv2.FONT_HERSHEY_SIMPLEX
@@ -87,17 +90,19 @@ if __name__ == "__main__":
                     cv2.LINE_AA      
                 )
                 save_frames += [done_frame]*16
-            if total_reward > 10:
-                    success_count += 1
-            if len(episode_reward) == eval_episode:        
-                out = cv2.VideoWriter(f"{log_dir}/episodes{eval_episode}_{sum(episode_reward)/len(episode_reward)}.mp4", fourcc, fps, frame_size)
-                for frame in save_frames:
-                    out.write(frame)
-                out.release()
-                break
-            # reset env
-            total_steps = 0
-            total_reward = 0
-            obs = vec_env.reset()
-    print(f"success_rate: {(success_count / eval_episode * 100):.2f}%")
-    print(f"Avg reward for ep{eval_episode}: {sum(episode_reward)/len(episode_reward)}")
+                if total_reward > 10:
+                        success_count += 1
+                if len(episode_reward) == eval_episode:        
+                    out = cv2.VideoWriter(f"{log_dir}/episodes{eval_episode}_{sum(episode_reward)/len(episode_reward)}.mp4", fourcc, fps, frame_size)
+                    for frame in save_frames:
+                        out.write(frame)
+                    out.release()
+                    break
+                # reset env
+                total_steps = 0
+                total_reward = 0
+                obs = vec_env.reset()
+        vec_env.close()
+          
+        print(f"success_rate: {(success_count / eval_episode * 100):.2f}%")
+        print(f"Avg reward for ep{eval_episode}: {sum(episode_reward)/len(episode_reward)}")

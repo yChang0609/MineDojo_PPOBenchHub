@@ -34,7 +34,13 @@ def ppo_training(params):
     )
     vec_env = VecFrameStack(vec_env, n_stack=4)
 
-    log_dir = f"logs/ppo_{task}/{model_name}"
+    import os
+    import shutil
+    mount_path_env = os.getenv('MOUNT_PATH', "")
+    log_dir = os.path.join(mount_path_env, f"logs/ppo_{task}/{model_name}")
+    
+
+
     model, episode_logger_callback = build_ppo(
         **params["PPO_Training"]["policy_network"],
         vec_env=vec_env, num_envs=num_envs, 
@@ -45,7 +51,11 @@ def ppo_training(params):
 
     model.learn(total_timesteps=total_timesteps, callback=episode_logger_callback)
     
-    model.save("./model/"+ model_name)
+    dummy_config_path = os.path.join(model.logger.dir, f"config.yaml")
+    model_save_dir = os.path.join(model.logger.dir, model_name)
+
+    shutil.copy(args.config, dummy_config_path)
+    model.save(model_save_dir)
     vec_env.close()
     
 if __name__ == "__main__":

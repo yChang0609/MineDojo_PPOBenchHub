@@ -11,7 +11,7 @@ def data_refactor(
     dir = os.path.split(source_dir)[-1]
     target_dir = os.path.join(target_path, dir) + "_refactor"
 
-    ea = event_accumulator.EventAccumulator(source_dir + "/PPO/")
+    ea = event_accumulator.EventAccumulator(source_dir + "/")
     ea.Reload()
     print(ea.path)
     writer = SummaryWriter(target_dir + "/")
@@ -31,7 +31,7 @@ def data_refactor(
             writer.add_scalar(transform_tag, event.value*wigth, event.step)
     writer.close()
 
-task_name = "CombatSpider"
+task_name = "HuntCow"
 refactor_label = {
     "Episode/Env_0/Episode_Steps":f"sample/{task_name}_episode_steps",
     "Episode/Env_0/Episode_Reward":f"sample/{task_name}_reward",
@@ -43,7 +43,7 @@ refactor_wight = {
 }
 
 # old_log_dir = "runs/HuntCow-1M-MLP_PPO" #Note: format: "path to folder/folder", not use "path to folder/folder[ / ]"!!
-path = "logs/ppo_CombatSpider" #Note: format: "path to folder/folder", not use "path to folder/folder[ / ]"!!
+path = "logs/ppo_HuntCow/100K_CLIP_HuntCow" #Note: format: "path to folder/folder", not use "path to folder/folder[ / ]"!!
 
 folders = [f for f in os.listdir(path) if os.path.isdir(os.path.join(path, f))]
 for f in folders:
