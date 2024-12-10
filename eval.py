@@ -13,6 +13,9 @@ import yaml
 
 import cv2
 import numpy as np
+import os
+
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -21,9 +24,16 @@ parser.add_argument(
     default='configs/config.yaml')
 args = parser.parse_args()
 
-def vec_env_obs2obs_list(vec_env_obs):
+mount_path_env = os.getenv('MOUNT_PATH', "")
+ckpt_path = os.path.join(mount_path_env,"ckpt/")
+eval_result_csv_path = os.path.join(mount_path_env,"eval_result/")
+eval_result_video_path = os.path.join(mount_path_env,"eval_result/video/")
+os.makedirs(eval_result_csv_path, exist_ok=True)
+os.makedirs(eval_result_video_path, exist_ok=True)
+
+def vec_env_obs2obs_list(vec_env_obs,n_stack=1):
     obs = vec_env_obs.squeeze(0)
-    split_obs = np.split(obs, 4, axis=0)
+    split_obs = np.split(obs, n_stack, axis=0)
     return [(cv2.cvtColor(_obs.transpose(1, 2, 0), cv2.COLOR_RGB2BGR)) for _obs in split_obs]
 
 if __name__ == "__main__":
@@ -39,13 +49,14 @@ if __name__ == "__main__":
 
     fourcc = cv2.VideoWriter_fourcc(*'mp4v') 
     fps = 30
-    frame_size = params["Environment"]["task_parameter"]["image_size"]
+    frame_size = tuple(reversed(params["Environment"]["task_parameter"]["image_size"]))
 
     task = params["Environment"]["task"]
     model_name = params["PPO_Training"]["save_name"]
     eval_episode = 20 # params["PPO_Training"]["eval_episode"]
-    
-    model = PPO.load("model/"+model_name)
+    total_success_avg = 0
+
+    model = PPO.load(f"logs/ppo_{task}/{model_name}" + "/PPO_1/" + model_name)
     log_dir = f"logs/ppo_{task}/{model_name}"
     eval_seed_list = [456, 789, 357, 468, 790]
     for seed in eval_seed_list:
@@ -63,7 +74,7 @@ if __name__ == "__main__":
             action, _ = model.predict(obs.copy())
             obs, reward, done, info = vec_env.step(action)
             # if (len(episode_reward) + 1) % 10 == 0:
-            save_frames += vec_env_obs2obs_list(obs)
+            save_frames += vec_env_obs2obs_list(obs, n_stack=4)
             total_reward += reward
             total_steps += 1
 
@@ -74,7 +85,7 @@ if __name__ == "__main__":
                 
                 # insert done_frame
                 # if (len(episode_reward)) % 10 == 0:
-                done_frame = np.ones((224, 224, 3), dtype=np.uint8) * 255
+                done_frame = np.ones((frame_size[0], frame_size[1], 3), dtype=np.uint8) * 255
                 text = f"Ep{len(episode_reward)}:{total_reward}"
                 font = cv2.FONT_HERSHEY_SIMPLEX
                 font_scale = 1
@@ -103,6 +114,9 @@ if __name__ == "__main__":
                 total_reward = 0
                 obs = vec_env.reset()
         vec_env.close()
-          
+        total_success_avg += (success_count / eval_episode * 100)  
         print(f"success_rate: {(success_count / eval_episode * 100):.2f}%")
         print(f"Avg reward for ep{eval_episode}: {sum(episode_reward)/len(episode_reward)}")
+    total_success_avg /= 5
+    print(f"total success rate: {(total_success_avg):.2f}%")
+
