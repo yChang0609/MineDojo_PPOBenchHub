@@ -56,12 +56,13 @@ if __name__ == "__main__":
     eval_episode = 20 # params["PPO_Training"]["eval_episode"]
     total_success_avg = 0
 
-    model = PPO.load(f"logs/ppo_{task}/{model_name}" + "/PPO_1/" + model_name)
+    model = PPO.load(f"logs/ppo_{task}/{model_name}" + "/PPO/" + model_name)
     log_dir = f"logs/ppo_{task}/{model_name}"
     eval_seed_list = [456, 789, 357, 468, 790]
+    n_stack = 4
     for seed in eval_seed_list:
         vec_env = make_vec_env(lambda: build_env(params,seed), n_envs=1)
-        vec_env = VecFrameStack(vec_env, n_stack=4)
+        vec_env = VecFrameStack(vec_env, n_stack=n_stack)
 
         obs = vec_env.reset()
         success_count = 0
@@ -74,7 +75,7 @@ if __name__ == "__main__":
             action, _ = model.predict(obs.copy())
             obs, reward, done, info = vec_env.step(action)
             # if (len(episode_reward) + 1) % 10 == 0:
-            save_frames += vec_env_obs2obs_list(obs, n_stack=4)
+            save_frames += vec_env_obs2obs_list(obs, n_stack=n_stack)
             total_reward += reward
             total_steps += 1
 

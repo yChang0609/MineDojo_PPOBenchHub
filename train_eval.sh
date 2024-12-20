@@ -51,4 +51,11 @@
 # MINEDOJO_HEADLESS=1 python train.py --config experiments/hunt_cow/100K_CNN_HuntCow.yaml
 # MINEDOJO_HEADLESS=1 python train.py --config configs/hunt_cow/100K_CLIP_HuntCow.yaml
 # MINEDOJO_HEADLESS=1 python train.py --config experiments/hunt_cow/100K_MLP_HuntCow.yaml
-MINEDOJO_HEADLESS=1 python -u train.py --config configs/100K_CLIP_CombatSpider.yaml
+# MINEDOJO_HEADLESS=1 python -u train.py --config configs/100K_CLIP_CombatSpider.yaml
+
+MINEDOJO_HEADLESS=1 python -u train.py --config experiments/1M_CLIP_HuntCow.yaml
+# MINEDOJO_HEADLESS=1 python -u train.py --config experiments/1M_CNN_HuntCow.yaml
+
+
+# MINEDOJO_HEADLESS=1 python -u eval.py --config experiments/combat_spider/1M_CLIP_CombatSpider.yaml
+# MINEDOJO_HEADLESS=1 python -u eval.py --config experiments/combat_spider/1M_CNN_CombatSpider.yaml

@@ -9,35 +9,24 @@ from gym import spaces
 
 
 # -- MineCLIP
+import hashlib
 from omegaconf import OmegaConf
 from mineclip import MineCLIP
 
 
 def load_clip(mount_path):
-    # cfg = OmegaConf.load(f"{mount_path}/conf.yaml")
-    # OmegaConf.set_struct(cfg, False)
-    # ckpt = cfg.pop("ckpt")
-    # OmegaConf.set_struct(cfg, True)
-    # assert (
-    #     hashlib.md5(open(ckpt.path, "rb").read()).hexdigest() == ckpt.checksum
-    # ), "broken ckpt"
-    # model = MineCLIP(**cfg)
-    # MineCLIP(
-
-    # )
-    # model.load_ckpt(ckpt.path, strict=True)
-    mineclip_model = MineCLIP(
-        arch="vit_base_p16_fz.v2.t2",
-        resolution=(160, 256),
-        pool_type="attn.d2.nh8.glusw",
-        image_feature_dim=512,
-        mlp_adapter_spec="v0-2.t0",
-        hidden_dim=512,
-    )
-    mineclip_model.load_ckpt("/home/cgv/Documents/project/EmbodiedAgent/MineDojo_PPOBenchHub/mineclip_model/attn.pth")
-    for param in mineclip_model.parameters():
+    cfg = OmegaConf.load(f"{mount_path}/conf.yaml")
+    OmegaConf.set_struct(cfg, False)
+    ckpt = cfg.pop("ckpt")
+    OmegaConf.set_struct(cfg, True)
+    assert (
+        hashlib.md5(open(ckpt.path, "rb").read()).hexdigest() == ckpt.checksum
+    ), "broken ckpt"
+    model = MineCLIP(**cfg)
+    model.load_ckpt(ckpt.path, strict=True)
+    for param in model.parameters():
         param.requires_grad = False
-    return mineclip_model
+    return model
 
 class CLIPFeatureExtractor(BaseFeaturesExtractor):
     """
@@ -46,23 +35,24 @@ class CLIPFeatureExtractor(BaseFeaturesExtractor):
         This corresponds to the number of unit for the last layer.
     """
 
-    def __init__(self, observation_space: spaces.Box, clip_model_path, features_dim: int = 256):
+    def __init__(self, observation_space: spaces.Box, stack_frame:int, clip_model_path:str, features_dim: int = 256):
         super().__init__(observation_space, features_dim)
         # We assume CxHxW images (channels first)
         # Re-ordering will be done by pre-preprocessing or wrapper
         # n_input_channels = observation_space.shape[0]
+        self.stack_frame = stack_frame
         print(f"Load MineCLIP model from:{clip_model_path}")
         self.clip = load_clip(clip_model_path).cuda()
-        self.linear = nn.Sequential(nn.Linear(self.clip.clip_model.vision_model.output_dim, features_dim), nn.ReLU())
+        self.linear = nn.Sequential(nn.Linear(int((self.clip.clip_model.vision_model.output_dim)*stack_frame), features_dim), nn.ReLU())
 
     def forward(self, observations: torch.Tensor) -> torch.Tensor:
         B, C, H, W = observations.shape
         requirement_chanels = 3
-        stack_frame = C // requirement_chanels
-        reshaped_obs = observations.view(B, stack_frame, requirement_chanels, H, W)
+        reshaped_obs = observations.view(B, self.stack_frame, requirement_chanels, H, W)
+        assert (self.stack_frame == C // requirement_chanels)
         with torch.no_grad():
-            x = self.clip.forward_image_features(reshaped_obs).detach()
-        return self.linear(torch.mean(x, dim=1))
+            x = self.clip.forward_image_features(reshaped_obs)
+        return self.linear(x.flatten(start_dim=1))
 
 class CNNFeatureExtractor(BaseFeaturesExtractor):
     """
@@ -166,7 +156,8 @@ class DreamerActorCritic(ActorCriticPolicy):
         )
 
     def _build_mlp_extractor(self) -> None:
-        self.mlp_extractor = DreamerNetwork(self.features_dim)
+        self.mlp_extractor = DreamerNetwork(self.features_dim, 1024)
+        
 
 class EpisodeLoggerCallback(BaseCallback):
     def __init__(self, num_envs, verbose=0):
@@ -197,7 +188,7 @@ class EpisodeLoggerCallback(BaseCallback):
     
 def build_ppo(vec_env, num_envs, 
               entropy_coef, gamma, gea_lambda,
-              log_dir, features_extractor_type, **kw
+              log_dir, features_extractor_type,stack_frame, **kw
               )-> tuple[PPO, BaseCallback] :
     episode_logger_callback = EpisodeLoggerCallback(num_envs=num_envs, verbose=1)
     
@@ -208,7 +199,8 @@ def build_ppo(vec_env, num_envs,
             features_extractor_class=CLIPFeatureExtractor,
             features_extractor_kwargs=dict(
                 features_dim=1024,
-                clip_model_path=clip_path
+                clip_model_path=clip_path,
+                stack_frame=4
                 ),
 
             )

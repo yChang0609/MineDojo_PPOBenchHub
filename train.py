@@ -28,23 +28,23 @@ def ppo_training(params):
     model_name = params["PPO_Training"]["save_name"]
     total_timesteps = params["PPO_Training"]["training_step"]
 
+    n_stack=4
     vec_env = make_vec_env(
         lambda : build_env(params, seed),
         n_envs=num_envs
     )
-    vec_env = VecFrameStack(vec_env, n_stack=4)
+    vec_env = VecFrameStack(vec_env, n_stack=n_stack)
 
     import os
     import shutil
     mount_path_env = os.getenv('MOUNT_PATH', "")
     log_dir = os.path.join(mount_path_env, f"logs/ppo_{task}/{model_name}")
     
-
-
     model, episode_logger_callback = build_ppo(
         **params["PPO_Training"]["policy_network"],
         vec_env=vec_env, num_envs=num_envs, 
-        log_dir=log_dir
+        log_dir=log_dir,
+        stack_frame=n_stack
     )
     print(model.policy.pi_features_extractor)
     print(model.policy.mlp_extractor)
