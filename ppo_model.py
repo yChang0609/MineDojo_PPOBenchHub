@@ -14,8 +14,8 @@ from omegaconf import OmegaConf
 from mineclip import MineCLIP
 
 
-def load_clip(mount_path):
-    cfg = OmegaConf.load(f"{mount_path}/conf.yaml")
+def load_clip(clip_model_path):
+    cfg = OmegaConf.load(f"{clip_model_path}/conf.yaml")
     OmegaConf.set_struct(cfg, False)
     ckpt = cfg.pop("ckpt")
     OmegaConf.set_struct(cfg, True)
@@ -43,7 +43,12 @@ class CLIPFeatureExtractor(BaseFeaturesExtractor):
         self.stack_frame = stack_frame
         print(f"Load MineCLIP model from:{clip_model_path}")
         self.clip = load_clip(clip_model_path).cuda()
-        self.linear = nn.Sequential(nn.Linear(int((self.clip.clip_model.vision_model.output_dim)*stack_frame), features_dim), nn.ReLU())
+        self.linear = nn.Sequential(
+            nn.Linear(
+                int((self.clip.clip_model.vision_model.output_dim)), 
+                features_dim
+                ), 
+            nn.ReLU())
 
     def forward(self, observations: torch.Tensor) -> torch.Tensor:
         B, C, H, W = observations.shape
@@ -51,8 +56,8 @@ class CLIPFeatureExtractor(BaseFeaturesExtractor):
         reshaped_obs = observations.view(B, self.stack_frame, requirement_chanels, H, W)
         assert (self.stack_frame == C // requirement_chanels)
         with torch.no_grad():
-            x = self.clip.forward_image_features(reshaped_obs)
-        return self.linear(x.flatten(start_dim=1))
+            x = self.clip.encode_video(reshaped_obs)
+        return self.linear(x)
 
 class CNNFeatureExtractor(BaseFeaturesExtractor):
     """
@@ -66,6 +71,7 @@ class CNNFeatureExtractor(BaseFeaturesExtractor):
         # We assume CxHxW images (channels first)
         # Re-ordering will be done by pre-preprocessing or wrapper
         n_input_channels = observation_space.shape[0]
+
         self.cnn = nn.Sequential(
             nn.Conv2d(n_input_channels, 32, kernel_size=8, stride=4, padding=0),
             nn.ReLU(),
@@ -83,7 +89,7 @@ class CNNFeatureExtractor(BaseFeaturesExtractor):
         self.linear = nn.Sequential(nn.Linear(n_flatten, features_dim), nn.ReLU())
 
     def forward(self, observations: torch.Tensor) -> torch.Tensor:
-        return self.linear(self.cnn(observations))
+        return self.linear(self.cnn(observations/255))
 
 class DreamerNetwork(nn.Module):
     """
@@ -151,6 +157,7 @@ class DreamerActorCritic(ActorCriticPolicy):
             action_space,
             lr_schedule,
             # Pass remaining arguments to base class
+            normalize_images=False,
             *args,
             **kwargs,
         )
