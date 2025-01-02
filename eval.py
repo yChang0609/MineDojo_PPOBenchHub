@@ -2,6 +2,7 @@
 from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import VecFrameStack
 from stable_baselines3.common.env_util import make_vec_env
+from ppo_model import build_ppo
 
 # Env
 import time
@@ -56,8 +57,38 @@ if __name__ == "__main__":
     eval_episode = 20 # params["PPO_Training"]["eval_episode"]
     total_success_avg = 0
 
-    model = PPO.load(f"logs/ppo_{task}/{model_name}" + "/PPO/" + model_name)
+    # custom_objects={
+    #     "optimizer_state_dict": None,
+    #     "policy_kwargs": {
+    #     "features_extractor_class": CLIPFeatureExtractor,
+    #     "features_extractor_kwargs": {
+    #         "features_dim": 1024,
+    #         "clip_model_path": params["PPO_Training"]["policy_network"]["mine_clip_path"],
+    #         "stack_frame": 4,
+    #     }
+    # }
+    # } if params["PPO_Training"]["policy_network"]["features_extractor_type"]=="CLIP" else None
+
+    
+    # model = PPO.load(f"logs/ppo_{task}/{model_name}" + "/PPO/" + model_name, custom_objects=custom_objects)
+    seed=123
+    n_stack=4
+    dummy_vec_env = make_vec_env(
+        lambda : build_env(params, seed),
+        n_envs=1
+    )
+    dummy_vec_env = VecFrameStack(dummy_vec_env, n_stack=n_stack)
     log_dir = f"logs/ppo_{task}/{model_name}"
+    
+    model, episode_logger_callback = build_ppo(
+        **params["PPO_Training"]["policy_network"],
+        vec_env=dummy_vec_env, num_envs=1, 
+        log_dir=log_dir,
+        stack_frame=n_stack
+    )
+    model.set_parameters(f"logs/ppo_{task}/{model_name}" + "/PPO/" + model_name)
+    dummy_vec_env.close()
+
     eval_seed_list = [456, 789, 357, 468, 790]
     n_stack = 4
     for seed in eval_seed_list:

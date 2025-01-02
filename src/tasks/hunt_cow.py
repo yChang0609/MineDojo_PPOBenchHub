@@ -13,25 +13,31 @@ class HuntCow(HuntDenseRewardWrapper):
         success_reward: float | int,
         max_spawn_range = 10,
         target_quantities = 1,
-        max_episode_len = 500
+        max_episode_len = 500,
+        cow_only = False
     ):
         distance_to_axis = int(max_spawn_range / np.sqrt(2))
         spawn_range_low = (-distance_to_axis, 1, -distance_to_axis)
         spawn_range_high = (distance_to_axis, 1, distance_to_axis)
         env = minedojo.make(
             "Combat",
-            target_names=["pig", "cow", "sheep"],
+            target_names=["cow"] if cow_only else ["pig", "cow", "sheep"],
             target_quantities=target_quantities,
-            reward_weights={
-                "pig": 0.0,
-                "cow": success_reward,
-                "sheep": 0.0,
-            },
+            reward_weights=
+                {
+                    "cow": success_reward,
+                }
+                if cow_only else
+                {
+                    "pig": 0.0,
+                    "cow": success_reward,
+                    "sheep": 0.0,
+                },
             # start_position=pos,
             initial_inventory=[
                 InventoryItem(slot=0, name="diamond_sword", variant=None, quantity=1)
             ],
-            initial_mobs=["cow", "pig", "sheep"],
+            initial_mobs=["cow"] if cow_only else ["pig", "cow", "sheep"],
             initial_mob_spawn_range_low=spawn_range_low,
             initial_mob_spawn_range_high=spawn_range_high,
             image_size=image_size,
