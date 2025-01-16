@@ -1,0 +1,27 @@
+Environment:
+  task: "HuntCow"
+  task_parameter:
+    image_size: [600,1024]
+    step_penalty: 0
+    nav_reward_scale: 0.5
+    attack_reward: 1
+    success_reward: 10
+    # max_spawn_range: 10
+    # target_quantities: 1
+    # max_episode_len: 500
+  num_envs: 1
+  seed: 123
+ 
+  action_space: "ReducedActionSpace"
+  observation: "ImageObservation"
+
+PPO_Training:
+  save_name: "100K_CLIP_HuntCow"
+  policy_network:
+    features_extractor_type: "CLIP" 
+    mine_clip_path: "/home/cgv/Documents/project/EmbodiedAgent/i-jepa/logs/mineclip"
+    gamma: 0.985
+    gea_lambda: 0.95
+    entropy_coef: 3E-4
+  training_step: 1000000 #1M
+  eval_episode: 10 

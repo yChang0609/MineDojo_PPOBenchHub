@@ -39,7 +39,7 @@ args = parser.parse_args()
 
 
 
-task_name = "CombatSpider"
+task_name = "HuntCow"
 refactor_label = {
     "Episode/Env_0/Episode_Steps":f"sample/{task_name}_episode_steps",
     "Episode/Env_0/Episode_Reward":f"sample/{task_name}_reward",
