@@ -1,11 +1,12 @@
 Environment:
-  task: "HuntCow"
+  task: "HuntCows"
   task_parameter:
     image_size: [600,1024]
     step_penalty: 0
     nav_reward_scale: 0.5
     attack_reward: 1
     success_reward: 10
+    mob_quantities: 6
     # max_spawn_range: 10
     # target_quantities: 1
     # max_episode_len: 500
