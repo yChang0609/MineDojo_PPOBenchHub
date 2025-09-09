@@ -125,7 +125,7 @@ if __name__ == "__main__":
                         cv2.LINE_AA      
                     )
                     save_frames += [done_frame]*16
-                    if total_reward > 10:
+                    if total_steps < params["Environment"]["task_parameter"]["max_episode_len"]:
                             success_count += 1
                     if len(episode_reward) == eval_episode:        
                         out = cv2.VideoWriter(f"{eval_result_video_path}/episodes{eval_episode}_{sum(episode_reward)/len(episode_reward)}.mp4", fourcc, fps, frame_size)
