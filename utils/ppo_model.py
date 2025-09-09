@@ -1,7 +1,5 @@
-# utils/ppo_model.py
 from __future__ import annotations
 from typing import Type, Optional, Dict, Any, Tuple
-import importlib
 
 from stable_baselines3 import PPO
 from stable_baselines3.common.callbacks import BaseCallback
@@ -37,73 +35,55 @@ class EpisodeLoggerCallback(BaseCallback):
 
 
 # ----------------------------- #
-#         Helper utils           #
-# ----------------------------- #
-def import_from_path(path: str):
-    """Import a class/function from 'pkg.module:ClassName' or 'pkg.module.ClassName'."""
-    if ":" in path:
-        module_path, name = path.split(":")
-    else:
-        module_path, name = path.rsplit(".", 1)
-    mod = importlib.import_module(module_path)
-    return getattr(mod, name)
-
-
-# ----------------------------- #
-#           PPO Builder          #
+#         PPO Builder            #
 # ----------------------------- #
 def build_ppo(
     vec_env,
     num_envs: int,
     *,
-    # You provide policy class and policy_kwargs via config
-    policy_class_path: Optional[str] = None,
+    policy: Optional[Type[ActorCriticPolicy]] = None,
     policy_kwargs: Optional[Dict[str, Any]] = None,
-
-    # PPO hyperparams
     ent_coef: float = 0.0,
     gamma: float = 0.99,
     gae_lambda: float = 0.95,
     log_dir: Optional[str] = None,
     verbose: int = 1,
-
-    # any other SB3 PPO kwargs (n_steps, batch_size, learning_rate, ...)
     **ppo_kwargs: Any,
 ) -> Tuple[PPO, BaseCallback]:
     """
-    Assemble a PPO agent using a policy class + kwargs.
-    This function does not build extractors or networks—bring your own via policy_kwargs.
-    Returns: (ppo_instance, episode_logger_callback)
+    Assemble a PPO agent using a user-provided policy class + kwargs.
+    Adds validation for features extractor settings.
     """
-    # Load policy class (default to SB3 ActorCriticPolicy)
-    if policy_class_path is None:
-        PolicyCls: Type[ActorCriticPolicy] = ActorCriticPolicy
-    else:
-        PolicyCls = import_from_path(policy_class_path)
-    if not issubclass(PolicyCls, ActorCriticPolicy):
-        raise TypeError("`policy_class_path` must resolve to a subclass of ActorCriticPolicy.")
+    if policy is None:
+        policy = ActorCriticPolicy
+    if policy_kwargs is None:
+        policy_kwargs = {}
 
-    policy_kwargs = dict(policy_kwargs or {})
-
-    # --- Validate features extractor contract if provided ---
-    fe_cls = policy_kwargs.get("features_extractor_class", None)
-    if fe_cls is not None:
-        if isinstance(fe_cls, str):
-            fe_cls = import_from_path(fe_cls)
-            policy_kwargs["features_extractor_class"] = fe_cls
+    # --- Validation for features extractor ---
+    if "features_extractor_class" in policy_kwargs:
+        fe_cls = policy_kwargs["features_extractor_class"]
         if not issubclass(fe_cls, BaseFeaturesExtractor):
-            raise TypeError("features_extractor_class must subclass BaseFeaturesExtractor.")
+            raise TypeError(
+                f"features_extractor_class must be a subclass of BaseFeaturesExtractor, got {fe_cls}"
+            )
+        if "features_extractor_kwargs" not in policy_kwargs:
+            raise ValueError(
+                "policy_kwargs must include 'features_extractor_kwargs' "
+                "when 'features_extractor_class' is provided."
+            )
+        if "features_dim" not in policy_kwargs["features_extractor_kwargs"]:
+            raise ValueError(
+                "features_extractor_kwargs must include 'features_dim' "
+                "(the output feature dimension expected by the policy)."
+            )
 
-        fe_kwargs = policy_kwargs.get("features_extractor_kwargs", None)
-        if fe_kwargs is None:
-            raise ValueError("When providing features_extractor_class, you must also provide features_extractor_kwargs.")
-        if "features_dim" not in fe_kwargs:
-            raise ValueError("features_extractor_kwargs must include 'features_dim'.")
+    if not issubclass(policy, ActorCriticPolicy):
+        raise TypeError("policy must be a subclass of ActorCriticPolicy.")
 
     ep_cb = EpisodeLoggerCallback(num_envs=num_envs, verbose=1)
 
     algo = PPO(
-        policy=PolicyCls,
+        policy=policy,
         env=vec_env,
         policy_kwargs=policy_kwargs,
         ent_coef=float(ent_coef),

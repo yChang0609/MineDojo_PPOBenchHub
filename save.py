@@ -2,14 +2,14 @@
 from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import VecFrameStack
 from stable_baselines3.common.env_util import make_vec_env
-from ppo_model import build_ppo
+from utils.ppo_model import build_ppo
 
 # Env
 import time
-from src.utils import build_env, load_config
+from env_factory import build_env, load_config
 
 import argparse
-from utils import load_config
+from env_factory import load_config
 
 import cv2
 from PIL import Image

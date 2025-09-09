@@ -1,26 +1,37 @@
 Environment:
-  task: "HuntCow"
+  task: HuntCow
   task_parameter:
-    image_size: [224,224]
+    image_size:
+    - 224
+    - 224
     step_penalty: 0
     nav_reward_scale: 0.1
     attack_reward: 1
     success_reward: 10
-    # max_spawn_range: 10
-    # target_quantities: 1
-    # max_episode_len: 500
   num_envs: 1
   seed: 123
- 
-  action_space: "ReducedActionSpace"
-  observation: "ImageObservation"
-
+  action_space: ReducedActionSpace
+  observation: ImageObservation
+  frame_stack: 4
 PPO_Training:
-  save_name: "1M_MLP_HuntCow"
-  policy_network:
-    features_extractor_type: "None" # CnnPolicy
+  save_name: 1M_MLP_HuntCow
+  total_timesteps: 1000000
+  eval_episodes: 10
+  algo:
     gamma: 0.985
-    gea_lambda: 0.95
-    entropy_coef: 3E-4
-  training_step: 1000000 #1M
-  eval_episode: 10 
+    gae_lambda: 0.95
+    ent_coef: 3E-4
+  policy:
+    class_path: utils.policies.DreamerActorCritic
+    ortho_init: false
+    net_kwargs:
+      hid_dim: 1024
+      num_layers: 3
+      activation: silu
+      norm: rmsnorm
+      share_backbone: false
+    features_extractor:
+      class_path: utils.extractors.CNNFeatureExtractor
+      kwargs:
+        features_dim: 1024
+        project_activation: relu

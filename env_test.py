@@ -1,5 +1,5 @@
 # Env
-from src.utils import build_env
+from env_factory import build_env
 
 from tqdm import tqdm
 

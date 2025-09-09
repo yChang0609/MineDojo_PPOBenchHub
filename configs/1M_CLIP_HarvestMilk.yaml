@@ -1,25 +1,38 @@
 Environment:
-  task: "HarvestMilk"
+  task: HarvestMilk
   task_parameter:
-    image_size: [160,256]
+    image_size:
+    - 160
+    - 256
     step_penalty: 0.01
     nav_reward_scale: 0.5
     success_reward: 10
     max_episode_len: 500
-    # max_spawn_range: 10
   num_envs: 1
   seed: 123
- 
-  action_space: "ReducedActionSpace"
-  observation: "ImageObservation"
-
+  action_space: ReducedActionSpace
+  observation: ImageObservation
+  frame_stack: 4
 PPO_Training:
-  save_name: "1M_CLIP_HarvestMilk"
-  policy_network:
-    features_extractor_type: "CLIP" 
-    mine_clip_path: "./mineclip_model"
+  save_name: 1M_CLIP_HarvestMilk
+  total_timesteps: 1000000
+  eval_episodes: 20
+  algo:
     gamma: 0.985
-    gea_lambda: 0.95
-    entropy_coef: 3E-4
-  training_step: 1000000 #1M
-  eval_episode: 20
+    gae_lambda: 0.95
+    ent_coef: 3E-4
+  policy:
+    class_path: utils.policies.DreamerActorCritic
+    ortho_init: false
+    net_kwargs:
+      hid_dim: 1024
+      num_layers: 3
+      activation: silu
+      norm: rmsnorm
+      share_backbone: false
+    features_extractor:
+      class_path: utils.extractors.CLIPFeatureExtractor
+      kwargs:
+        features_dim: 1024
+        clip_model_path: ./mineclip_model
+        project_activation: relu
