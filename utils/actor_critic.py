@@ -43,16 +43,21 @@ class DreamerNetwork(nn.Module):
 
     def forward(self, features: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """Return latent policy and value representations."""
-        if self.share_backbone:
-            h = self.shared(features)
-            return self.policy_head(h), self.value_head(h)
-        return self.policy_net(features), self.value_net(features)
+        with torch.amp.autocast(device_type=features.device.type, dtype=torch.bfloat16, enabled=True):
+            if self.share_backbone:
+                h = self.shared(features)
+                return self.policy_head(h), self.value_head(h)
+            return self.policy_net(features), self.value_net(features)
 
     def forward_actor(self, features: torch.Tensor) -> torch.Tensor:
-        return self.shared(features) if self.share_backbone else self.policy_net(features)
+        with torch.amp.autocast(device_type=features.device.type, dtype=torch.bfloat16, enabled=True):
+            ret = self.shared(features) if self.share_backbone else self.policy_net(features)
+        return ret
 
     def forward_critic(self, features: torch.Tensor) -> torch.Tensor:
-        return self.shared(features) if self.share_backbone else self.value_net(features)
+        with torch.amp.autocast(device_type=features.device.type, dtype=torch.bfloat16, enabled=True):
+            ret = self.shared(features) if self.share_backbone else self.value_net(features)
+        return ret
 
 
 class DreamerActorCritic(ActorCriticPolicy):
