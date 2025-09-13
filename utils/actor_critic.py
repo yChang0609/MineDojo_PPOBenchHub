@@ -74,7 +74,7 @@ class DreamerActorCritic(ActorCriticPolicy):
         **kwargs,
     ):
         self._net_kwargs: Dict[str, Any] = kwargs.pop("net_kwargs", {})
-        kwargs["ortho_init"] = kwargs.get("ortho_init", False)
+        kwargs["ortho_init"] = kwargs.get("ortho_init", True)
         super().__init__(
             observation_space,
             action_space,
