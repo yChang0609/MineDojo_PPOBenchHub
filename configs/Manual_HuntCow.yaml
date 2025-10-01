@@ -35,5 +35,5 @@ PPO_Training:
       class_path: utils.extractors.CLIPFeatureExtractor
       kwargs:
         features_dim: 1024
-        clip_model_path: /home/cgv/Documents/project/EmbodiedAgent/i-jepa/logs/mineclip
+        clip_model_path: "/path/to/pretrain clip mdoel" 
         project_activation: relu
